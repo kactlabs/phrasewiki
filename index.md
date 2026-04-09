@@ -1,6 +1,6 @@
 # Phrase Wiki
 
-Description
+All of our Phrase collection will be coming here
 
 ## Phrases :
 
