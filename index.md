@@ -40,4 +40,6 @@ All of our Phrase collection will be coming here
   * [Miss the boat](035-miss-the-boat.md)
   * [On thin ice](036-on-thin-ice.md)
   * [Pull the plug](037-pull-the-plug.md)
+  * [Rain on someone’s parade](038-rain-on-someones-parade.md)
+  * [Rock the boat](039-rock-the-boat.md)
 
