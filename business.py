@@ -37,25 +37,32 @@ def save_lines(filepath, lines):
             f.write(f"{line}\n")
 
 
-def get_next_index():
-    """Get the next available index number by checking existing files"""
+def get_existing_files_info():
+    """Get next available index and set of existing slugs from numbered md files"""
     import glob
 
     existing_files = glob.glob('[0-9][0-9][0-9]-*.md')
     if not existing_files:
-        return 1
+        return 1, set()
 
     indices = []
+    slugs = set()
     for filename in existing_files:
-        match = re.match(r'^(\d{3})-', filename)
+        match = re.match(r'^(\d{3})-(.+)\.md$', filename)
         if match:
             indices.append(int(match.group(1)))
+            slugs.add(match.group(2))
 
-    return max(indices) + 1 if indices else 1
+    next_index = max(indices) + 1 if indices else 1
+    return next_index, slugs
 
 
-def update_index(created_files, phrases):
-    """Append newly created phrase files to index.md"""
+def update_index(created_files_with_phrases):
+    """Append newly created phrase files to index.md
+    
+    Args:
+        created_files_with_phrases: list of (filename, phrase) tuples
+    """
     index_file = "index.md"
 
     try:
@@ -64,17 +71,23 @@ def update_index(created_files, phrases):
     except FileNotFoundError:
         content = "# Phrase Wiki\n\nAll of our Phrase collection will be coming here\n\n## Phrases :\n\n"
 
+    content_lower = content.lower()
     new_entries = ""
-    for filename, phrase in zip(created_files, phrases):
+    added = 0
+    for filename, phrase in created_files_with_phrases:
+        # Check if phrase already linked (case-insensitive, ignores filename differences)
+        if phrase.lower() in content_lower:
+            print(f"⏭️  Skipping index entry for '{phrase}' (already in index.md)")
+            continue
         link = f"  * [{phrase}]({filename})"
-        if link not in content:
-            new_entries += f"{link}\n"
+        new_entries += f"{link}\n"
+        added += 1
 
     if new_entries:
         content = content.rstrip() + "\n" + new_entries + "\n"
         with open(index_file, 'w', encoding='utf-8') as f:
             f.write(content)
-        print(f"📚 Updated index.md with {len(created_files)} new entry(ies)")
+        print(f"📚 Updated index.md with {added} new entry(ies)")
 
 
 def generate_explanation(llm, phrase):
@@ -174,18 +187,26 @@ def main():
         print(f"❌ Error initializing LLM: {e}")
         sys.exit(1)
 
-    next_index = get_next_index()
+    next_index, existing_slugs = get_existing_files_info()
     created_files = []
 
     for phrase in batch:
+        slug = sanitize_filename(phrase)
+        if slug in existing_slugs:
+            print(f"⏭️  Skipping '{phrase}' (file with slug '{slug}' already exists)")
+            done.append(phrase)
+            print()
+            continue
+
         content = generate_explanation(llm, phrase)
         if content:
-            filename = f"{next_index:03d}-{sanitize_filename(phrase)}.md"
+            filename = f"{next_index:03d}-{slug}.md"
             try:
                 with open(filename, 'w', encoding='utf-8') as f:
                     f.write(content)
                 print(f"✅ Created: {filename}")
-                created_files.append(filename)
+                created_files.append((filename, phrase))
+                existing_slugs.add(slug)
                 done.append(phrase)
                 next_index += 1
             except Exception as e:
@@ -194,7 +215,7 @@ def main():
 
     # Update index.md with new entries
     if created_files:
-        update_index(created_files, batch)
+        update_index(created_files)
 
     # Update done_phrases.txt
     save_lines(DONE_FILE, done)
@@ -206,7 +227,7 @@ def main():
     # Summary
     print("=" * 60)
     print(f"✨ Created {len(created_files)} file(s):")
-    for f in created_files:
+    for f, _ in created_files:
         print(f"   📄 {f}")
     print(f"📋 Remaining phrases: {len(remaining_after)}")
     print("=" * 60)
