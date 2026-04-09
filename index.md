@@ -1,10 +1,10 @@
-# Wiki Template
+# Phrase Wiki
 
 Description
 
-## Category :
+## Phrases :
 
-  * [1](1.md)
+  * [Hold your horsess](hold-your-horses.md)
 
 
 
