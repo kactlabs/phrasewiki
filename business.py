@@ -90,44 +90,17 @@ def update_index(created_files_with_phrases):
         print(f"📚 Updated index.md with {added} new entry(ies)")
 
 
+def load_prompt(filename):
+    """Load prompt template from prompts/ directory"""
+    filepath = os.path.join("prompts", filename)
+    with open(filepath, 'r', encoding='utf-8') as f:
+        return f.read()
+
+
 def generate_explanation(llm, phrase):
     """Generate a phrase explanation using LLM"""
-
-    prompt = f"""Explain the phrase "{phrase}" in detail using this EXACT markdown format.
-Do NOT include any text before or after the markdown. Output ONLY the markdown.
-
-/ [Home](index.md)
-
-## "{phrase}" [relevant emoji]
-
-**Meaning:** [One or two sentence meaning of the phrase]
-
----
-
-### Origin
-[Brief origin/history of the phrase in 2-3 sentences]
-
----
-
-### Real-Time Example
-
-[Write a vivid, relatable real-time scenario (3-5 sentences) where someone would use this phrase.
-Make it modern, practical, and engaging. Include a quoted usage of the phrase in context using blockquote format.]
-
----
-
-### Other Everyday Contexts
-
-| Situation | Usage |
-|---|---|
-| [Situation 1] | *"[Usage with the phrase]"* |
-| [Situation 2] | *"[Usage with the phrase]"* |
-| [Situation 3] | *"[Usage with the phrase]"* |
-
----
-
-**In short:** [One punchy sentence summarizing the phrase]
-"""
+    template = load_prompt("phrase_explanation.txt")
+    prompt = template.replace("{phrase}", phrase)
 
     try:
         print(f"📝 Generating explanation for: {phrase}")
